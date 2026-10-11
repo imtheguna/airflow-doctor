@@ -1,0 +1,23 @@
+services:
+  pipeline-doctor:
+    build: .
+    env_file: .env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8000:8000"   # MCP over HTTP at http://localhost:8000/mcp
+
+  # Option 3: Gemini investigates failures through the MCP server. Start with: docker compose --profile agent up -d
+  doctor-agent:
+    profiles: [agent]
+    build: ./agent
+    env_file: .env
+    environment:
+      MCP_URL: http://pipeline-doctor:8000/mcp
+      AGENT_HOST: 0.0.0.0
+      NOTIFY_FILE: /notifications/pipeline_doctor.log
+    depends_on: [pipeline-doctor]
+    volumes:
+      - ./notifications:/notifications
+    ports:
+      - "127.0.0.1:8001:8001"
